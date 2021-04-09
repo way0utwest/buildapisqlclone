@@ -7,7 +7,15 @@ $DatabaseName = 'DMDemo_5_Prod' # The name of the database
 
 
 Connect-SqlClone -ServerUrl $ServerUrl
+$SqlServerInstance = Get-SqlCloneSqlServerInstance -MachineName $MachineName -InstanceName $InstanceName
+$ImageDestination = Get-SqlCloneImageLocation -Path $ImageLocation
 
-$SqlServerInstance = Get-SqlCloneSqlServerInstance -MachineName 'Aristotle' -InstanceName ''
+$MaskingSet = New-SqlCloneMask -Path $MaskingSetPath
 
-New-SqlCloneImage -Name "TestImage" -SqlServerInstance "Aristotle" -DatabaseName 'DMDemo_5_Prod' -Destination "\\Aristotle\SQLCloneImages\"
+$ImageOperation = New-SqlCloneImage -Name "$DatabaseName-$(Get-Date -Format yyyyMMddHHmmss)-Cleansed" `
+    -SqlServerInstance $SqlServerInstance `
+    -DatabaseName $DatabaseName `
+    -Destination $ImageDestination `
+    -Modifications $MaskingSet
+
+Wait-SqlCloneOperation -Operation $ImageOperation
