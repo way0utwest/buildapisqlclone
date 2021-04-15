@@ -4,7 +4,7 @@ $SqlServerInstance = Get-SqlCloneSqlServerInstance -MachineName 'Aristotle' -Ins
 
 $ImageStorageLocation = Get-SqlCloneImageLocation -Path '\\Aristotle\SQLCloneImages\'
 
-New-SqlCloneImage -Name "TestImage" -SqlServerInstance "Aristotle" -DatabaseName 'DMDemo_5_Prod' -Destination '\\Aristotle\SQLCloneImages\'
+New-SqlCloneImage -Name "TestImage" -SqlServerInstance $SqlServerInstance -DatabaseName 'DMDemo_5_Prod' -Destination $ImageStorageLocation
 
 
 

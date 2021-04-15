@@ -16,14 +16,12 @@ This is the named instance name. This is optional, and can be ignored if the def
 .parameter ImageLocation
 This is the path to the location for storing clone image files. This should be a UNC path.
 #>
-param(
-  [string] $ServerUrl = 'http://Aristotle:14145',                                  # Set to your Clone server URL
-  [string] $MachineName = 'Aristotle',                                             # The machine name of the SQL Server instance to create the clones on
-  [string] $InstanceName = '',                                                     # The instance name of the SQL Server instance to create the clones on
-  [string] $ImageLocation = '\\Aristotle\SQLCloneImages',                          # Point to the file share we want to use to store the image
-  [string] $MaskingSetPath = "\\Aristotle\MaskingSets\dmdemo_prodmask.DMSMaskSet", # The path to a masking set
-  [string] $DatabaseName = 'DMDemo_5_Prod'                                         # The name of the database
-)
+$ServerUrl = 'http://Aristotle:14145'                                  # Set to your Clone server URL
+$MachineName = 'Aristotle'                                             # The machine name of the SQL Server instance to create the clones on
+$InstanceName = ''                                                     # The instance name of the SQL Server instance to create the clones on
+$ImageLocation = '\\Aristotle\SQLCloneImages'                          # Point to the file share we want to use to store the image
+$MaskingSetPath = "\\Aristotle\MaskingSets\dmdemo_prodmask.DMSMaskSet" # The path to a masking set
+$DatabaseName = 'DMDemo_5_Prod'                                         # The name of the database
 
 $ImageName = $DatabaseName + "_New"                                    # Name of the new image to create
 $ImageCurrent = $DatabaseName + "_Current"                             # Name of the current image that exists (if it does)
@@ -35,13 +33,6 @@ $ImageDestination = Get-SqlCloneImageLocation -Path $ImageLocation
 
 $MaskingSet = New-SqlCloneMask -Path $MaskingSetPath
 
-# Remove the New Image if it exists for some reason
-$ImageList = Get-SqlCloneImage
-foreach ($Image in $ImageList) {
-    if ($Image.Name -eq $ImageName) { Remove-SqlCloneImage $Image}
-}
-
-
 $ImageOperation = New-SqlCloneImage -Name $ImageName `
     -SqlServerInstance $SqlServerInstance `
     -DatabaseName $DatabaseName `
@@ -50,26 +41,7 @@ $ImageOperation = New-SqlCloneImage -Name $ImageName `
 
 Wait-SqlCloneOperation -Operation $ImageOperation
 
-# Rename the current image
 $ImageList = Get-SqlCloneImage
-foreach ($Image in $ImageList) {
-    if ($Image.Name -eq $ImageOld) {
-        # Remove old Clones if they exist against the old image
-        #########################################################
-        # NOTE:
-        # This is destructive and all developers should know this
-        #########################################################
-        $oldClones = Get-SqlClone | Where-Object {$_.ParentImageId -eq $Image.Id}
-        foreach ($clone in $oldClones)
-        {
-            Remove-SqlClone $clone | Wait-SqlCloneOperation
-        }
-        # Remove the old Image
-        Remove-SqlCloneImage -Image $Image | Wait-SqlCloneOperation
-    }
-}
-
-# Old Image should be removed at this point
 # Rename the current to old
 foreach ($Image in $ImageList) {
     if ($Image.Name -eq $ImageCurrent) {
@@ -80,4 +52,3 @@ foreach ($Image in $ImageList) {
 # Rename the new image to the Current one
 $ImageToRename = Get-SqlCloneImage -Name $ImageName 
 Rename-SqlCloneImage -Image $ImageToRename -NewName $ImageCurrent
-
