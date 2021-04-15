@@ -1,38 +1,20 @@
-<#
-.Description
-This script will create a new image for the clone server, database server, and database passed in. The image name will default to the databasename_new on creation.
-
-If the image creation succeeds, this script will rename a current image, named databasename_current, to databasename_old. The new image will then be renamed to databasename_current.
-
-.parameter ServerUrl
-This is the URL of the clone server, including the http or https.
-
-.parameter MachineName
-This is the name of the database server instance where the source database is located
-
-.parameter InstanceName
-This is the named instance name. This is optional, and can be ignored if the default instance is used.
-
-.parameter ImageLocation
-This is the path to the location for storing clone image files. This should be a UNC path.
-#>
-	
-$ServerUrl = 'http://Aristotle:14145' # Set to your Clone server URL
-$MachineName = 'Aristotle' # The machine name of the SQL Server instance to create the clones on
-$InstanceName = '' # The instance name of the SQL Server instance to create the clones on
-$ImageLocation = '\\Aristotle\SQLCloneImages' # Point to the file share we want to use to store the image
-$MaskingSetPath = "\\Aristotle\MaskingSets\dmdemo_prodmask.DMSMaskSet" # The path to a masking set
-$DatabaseName = 'DMDemo_5_Prod' # The name of the database
-$ImageName = $DatabaseName + "_New"
-
+$ServerUrl = 'http://Aristotle:14145'                                # Set to your Clone server URL
+$MachineName = 'Aristotle'                                           # The machine name of the SQL Server instance to create the clones on
+$InstanceName = ''                                                   # The instance name of the SQL Server instance to create the clones on
+$ImageLocation = '\\Aristotle\SQLCloneImages'                        # Point to the file share we want to use to store the image
+$DatabaseName = 'DMDemo_5_Prod'                                      # The name of the database
+                                                                     # The path to a masking set
+$MaskingSetPath = "E:\Documents\Data Masker(SqlServer)\Masking Sets\dmdemo_prodmask.DMSMaskSet" 
 
 Connect-SqlClone -ServerUrl $ServerUrl
+
+# set the objects needed from the clone server
 $SqlServerInstance = Get-SqlCloneSqlServerInstance -MachineName $MachineName -InstanceName $InstanceName
 $ImageDestination = Get-SqlCloneImageLocation -Path $ImageLocation
 
 $MaskingSet = New-SqlCloneMask -Path $MaskingSetPath
 
-$ImageOperation = New-SqlCloneImage -Name $ImageName `
+$ImageOperation = New-SqlCloneImage -Name "$DatabaseName-$(Get-Date -Format yyyyMMddHHmmss)-Cleansed" `
     -SqlServerInstance $SqlServerInstance `
     -DatabaseName $DatabaseName `
     -Destination $ImageDestination `
