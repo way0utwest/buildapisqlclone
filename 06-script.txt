@@ -35,13 +35,12 @@ $ImageDestination = Get-SqlCloneImageLocation -Path $ImageLocation
 
 $MaskingSet = New-SqlCloneMask -Path $MaskingSetPath
 
-#########################################################
 # Remove the New Image if it exists for some reason
-#########################################################
 $ImageList = Get-SqlCloneImage
 foreach ($Image in $ImageList) {
     if ($Image.Name -eq $ImageName) { Remove-SqlCloneImage $Image}
 }
+
 
 $ImageOperation = New-SqlCloneImage -Name $ImageName `
     -SqlServerInstance $SqlServerInstance `
@@ -51,21 +50,27 @@ $ImageOperation = New-SqlCloneImage -Name $ImageName `
 
 Wait-SqlCloneOperation -Operation $ImageOperation
 
-#########################################################
 # Rename the current image
-#########################################################
 $ImageList = Get-SqlCloneImage
 foreach ($Image in $ImageList) {
     if ($Image.Name -eq $ImageOld) {
+        # Remove old Clones if they exist against the old image
+        #########################################################
+        # NOTE:
+        # This is destructive and all developers should know this
+        #########################################################
+        $oldClones = Get-SqlClone | Where-Object {$_.ParentImageId -eq $Image.Id}
+        foreach ($clone in $oldClones)
+        {
+            Remove-SqlClone $clone | Wait-SqlCloneOperation
+        }
         # Remove the old Image
         Remove-SqlCloneImage -Image $Image | Wait-SqlCloneOperation
     }
 }
 
-#########################################################
 # Old Image should be removed at this point
 # Rename the current to old
-#########################################################
 foreach ($Image in $ImageList) {
     if ($Image.Name -eq $ImageCurrent) {
         Rename-SqlCloneImage -Image $Image -NewName $ImageOld
